@@ -231,7 +231,7 @@ def main():
             
             columnas_mostrar = [
                 "Ticker", "Nombre", "Sector", "Precio", "P/E", "P/B", "P/FCF", 
-                "Dividend Yield %", "Payout Ratio", "ROE", "ROA", "Current Ratio", "Debt/Eq", "Profit Margin", "WACC", "ROIC", "Creación de Valor (WACC vs ROIC)"]
+                "Dividend Yield %", "Payout Ratio", "ROE", "ROA", "Current Ratio", "LtDebt/Eq", "Debt/Eq", "Oper Margin", "Profit Margin", "WACC", "ROIC", "Creación de Valor (WACC vs ROIC)"]
             
             st.dataframe(
                 df[columnas_mostrar].dropna(how='all', axis=1),
