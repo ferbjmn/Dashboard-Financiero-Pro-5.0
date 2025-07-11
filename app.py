@@ -94,6 +94,7 @@ def obtener_datos_financieros(ticker):
         # Ratios de valoración
         pe = info.get("trailingPE")
         pb = info.get("priceToBook")
+        dividend = info.get("dividendRate")
         dividend_yield = info.get("dividendYield")
         payout = info.get("payoutRatio")
         
@@ -102,13 +103,13 @@ def obtener_datos_financieros(ticker):
         roe = info.get("returnOnEquity")
         
         # Ratios de liquidez
-        current_ratio = info.get("currentRatio")  # Calcularemos este si no está disponible
+        current_ratio = info.get("currentRatio")
+        quick_ratio = info.get("quickRatio")
         
         # Ratios de deuda
-        ltde = info.get("longTermDebtToEquity")
-        de = info.get("debtToEquity")
+        debt_to_equity = info.get("debtToEquity")  # Usamos esta propiedad de yfinance
         
-        # Márgenes
+        # Margenes
         op_margin = info.get("operatingMargins")
         profit_margin = info.get("profitMargins")
         
@@ -120,18 +121,6 @@ def obtener_datos_financieros(ticker):
         # Llamada a la nueva función para obtener WACC y ROIC
         wacc, roic, diferencia_roic_wacc = calcular_wacc_y_roic(ticker)
 
-        # Si no se obtuvo el Current Ratio, lo calculamos
-        if current_ratio is None:
-            total_current_assets = bs.loc['Total Current Assets'].iloc[0] if 'Total Current Assets' in bs.index else 0
-            total_current_liabilities = bs.loc['Total Current Liabilities'].iloc[0] if 'Total Current Liabilities' in bs.index else 0
-            current_ratio = total_current_assets / total_current_liabilities if total_current_liabilities != 0 else None
-
-        # Si no se obtuvo el Payout Ratio, lo calculamos
-        if payout is None:
-            net_income = fin.loc["Net Income"].iloc[0] if "Net Income" in fin.index else 0
-            dividend_paid = cf.loc["Dividends Paid"].iloc[0] if "Dividends Paid" in cf.index else 0
-            payout = dividend_paid / net_income if net_income != 0 else None
-
         return {
             "Ticker": ticker,
             "Nombre": name,
@@ -142,13 +131,13 @@ def obtener_datos_financieros(ticker):
             "P/E": pe,
             "P/B": pb,
             "P/FCF": pfcf,
+            "Dividend Year": dividend,
             "Dividend Yield %": dividend_yield,
             "Payout Ratio": payout,
             "ROA": roa,
             "ROE": roe,
             "Current Ratio": current_ratio,
-            "LtDebt/Eq": ltde,
-            "Debt/Eq": de,
+            "Debt/Equity": debt_to_equity,  # Ahora mostramos el Debt/Equity de yfinance
             "Oper Margin": op_margin,
             "Profit Margin": profit_margin,
             "WACC": wacc,
@@ -186,7 +175,6 @@ def main():
         if not tickers:
             st.warning("Por favor ingresa al menos un ticker")
             return
-            
         resultados = {}
         progress_bar = st.progress(0)
         status_text = st.empty()
@@ -224,14 +212,15 @@ def main():
             st.header("📋 Resumen General")
             
             # Formatear columnas porcentuales
-            porcentajes = ["Dividend Yield %", "Payout Ratio", "ROA", "ROE", "Oper Margin", "Profit Margin", "WACC", "ROIC", "Creación de Valor (WACC vs ROIC)"]
+            porcentajes = ["Dividend Yield %", "ROA", "ROE", "Oper Margin", "Profit Margin", "WACC", "ROIC"]
             for col in porcentajes:
                 if col in df.columns:
                     df[col] = df[col].apply(lambda x: f"{x:.2%}" if pd.notnull(x) else "N/D")
             
             columnas_mostrar = [
                 "Ticker", "Nombre", "Sector", "Precio", "P/E", "P/B", "P/FCF", 
-                "Dividend Yield %", "Payout Ratio", "ROE", "ROA", "Current Ratio", "LtDebt/Eq", "Debt/Eq", "Oper Margin", "Profit Margin", "WACC", "ROIC", "Creación de Valor (WACC vs ROIC)"]
+                "Dividend Yield %", "ROE", "Debt/Equity", "Profit Margin", "WACC", "ROIC", "Creación de Valor (WACC vs ROIC)"
+            ]
             
             st.dataframe(
                 df[columnas_mostrar].dropna(how='all', axis=1),
@@ -264,7 +253,7 @@ def main():
                 ax.set_ylabel("Dividend Yield %")
                 st.pyplot(fig)
                 plt.close()
-            
+      
             # Sección 3: Rentabilidad y Eficiencia
             st.header("📈 Rentabilidad y Eficiencia")
             
